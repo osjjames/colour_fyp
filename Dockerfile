@@ -1,11 +1,14 @@
 # docker build -t test . && docker run -it -p 8888:8888 -v .:/src test
 # https://localhost:8888
 
-FROM tensorflow/tensorflow:latest-py3-jupyter
+FROM ashokponkumar/caffe-py3
 
 WORKDIR /src
-ADD ./requirements.txt /src/requirements.txt
+COPY ./requirements.txt /src/requirements.txt
 RUN pip install -r requirements.txt
+RUN python --version
 # ADD . /src
-CMD ["jupyter", "notebook", "--ip", "0.0.0.0", "--allow-root", "--no-browser"]
+# EXPOSE 8888
+CMD ["sh", "./setup.sh"]
+# CMD ["jupyter", "notebook", "--ip", "0.0.0.0", "--allow-root", "--no-browser", "--NotebookApp.token='test'"]
 # CMD [ "python", "./main.py"]
