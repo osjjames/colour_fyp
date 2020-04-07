@@ -1,91 +1,54 @@
 # TensorFlow and tf.keras
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Conv2D, Flatten
 
 # Helper libraries
 import numpy as np
 import matplotlib.pyplot as plt
 
-def train_and_predict():
-  fashion_mnist = keras.datasets.fashion_mnist
+#download mnist data and split into train and test sets
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+#plot the first image in the dataset
+plt.imshow(X_train[0])
+print(X_train[0].shape)
 
-  (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+#reshape data to fit model
+X_train = X_train.reshape(60000,28,28,1)
+X_test = X_test.reshape(10000,28,28,1)
 
-  class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+#one-hot encode target column
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+print(y_train[0])
 
-  plt.figure()
-  plt.imshow(train_images[0])
-  plt.colorbar()
-  plt.grid(False)
-  plt.show()
+model = Sequential()
+#add model layers
+model.add(Conv2D(64, kernel_size=3, activation='relu', input_shape=(28,28,1)))
+model.add(Conv2D(32, kernel_size=3, activation='relu'))
+model.add(Flatten())
+model.add(Dense(10, activation='softmax'))
 
-  train_images = train_images / 255.0
+#compile model using accuracy to measure model performance
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-  test_images = test_images / 255.0
+#train the model
+model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=3)
 
-  plt.figure(figsize=(10,10))
-  for i in range(25):
-    plt.subplot(5,5,i+1)
-    plt.xticks([])
-    plt.yticks([])
-    plt.grid(False)
-    plt.imshow(train_images[i], cmap=plt.cm.binary)
-    plt.xlabel(class_names[train_labels[i]])
-  plt.show()
+predicitons = []
+#Create array of predicted categories
+for x in model.predict(X_test[:100]):
+    m = max(x)
+    mi = [i for i, j in enumerate(x) if j == m]
+    predictions.append(mi)
 
-  model = keras.Sequential([
-    keras.layers.Flatten(input_shape=(28, 28)),
-    keras.layers.Dense(128, activation='relu'),
-    keras.layers.Dense(10, activation='softmax')
-  ])
+actual = []
+for x in y_test[:4]:
+    actual.append(np.where(x == 1)[0])
 
-  model.compile(optimizer='adam',
-    loss='sparse_categorical_crossentropy',
-    metrics=['accuracy'])
+print(np.array_equal(predicted, actual))
 
-  model.fit(train_images, train_labels, epochs=10)
 
-  test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
-
-  print('\nTest accuracy:', test_acc)
-
-  predictions = model.predict(test_images)
-
-  def plot_image(i, predictions_array, true_label, img):
-    predictions_array, true_label, img = predictions_array, true_label[i], img[i]
-    plt.grid(False)
-    plt.xticks([])
-    plt.yticks([])
-
-    plt.imshow(img, cmap=plt.cm.binary)
-
-    predicted_label = np.argmax(predictions_array)
-    if predicted_label == true_label:
-      color = 'blue'
-    else:
-      color = 'red'
-
-    plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],
-                                  100*np.max(predictions_array),
-                                  class_names[true_label]),
-                                  color=color)
-
-  def plot_value_array(i, predictions_array, true_label):
-    predictions_array, true_label = predictions_array, true_label[i]
-    plt.grid(False)
-    plt.xticks(range(10))
-    plt.yticks([])
-    thisplot = plt.bar(range(10), predictions_array, color="#777777")
-    plt.ylim([0, 1])
-    predicted_label = np.argmax(predictions_array)
-
-    thisplot[predicted_label].set_color('red')
-    thisplot[true_label].set_color('blue')
-
-  def plot_prediction(i):
-    plt.figure(figsize=(6,3))
-    plt.subplot(1,2,1)
-    plot_image(i, predictions[i], test_labels, test_images)
-    plt.subplot(1,2,2)
-    plot_value_array(i, predictions[i],  test_labels)
-    plt.show()
