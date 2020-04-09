@@ -19,35 +19,40 @@ def test_rgb2lab():
   plt.show()
 
 def training_set_from_video(path, n): 
-  groups = split_video(path)
+  groups = split_video(path, color = True)
 
   train_X = []
   train_y = []
 
-  groups_Lab = []
-  for x in length(groups):
-    for y in length(groups[x]):
+  # groups_Lab = [[cv2.cvtColor(frame, cv2.COLOR_RGB2Lab) for frame in groups[i]] for i in range(len(groups))]
+  groups_Lab = groups.copy()
+  for x in range(len(groups)):
+    for y in range(len(groups[x])):
       groups_Lab[x][y] = cv2.cvtColor(groups[x][y], cv2.COLOR_RGB2Lab)
 
     color_frame_indices = []
-    radius = np.floor(n/2) # every coloured frame should have a radius of n/2 target frames in both directions
-    for i in range(radius,length(groups_Lab[x]),n): # choose every nth frame to be a coloured frame
+    radius = int(np.floor(n/2)) # every coloured frame should have a radius of n/2 target frames in both directions
+    for i in range(radius,len(groups_Lab[x]),n): # choose every nth frame to be a coloured frame
       color_frame_indices.append(i)
 
     for j in tqdm_notebook(color_frame_indices):
       for k in range(j-radius, j+radius+1):
-        if k != j:
-          color_ab = groups_Lab[x][j][:,:,1:2]
+        if k != j and k < len(groups_Lab[x]):
+          color_a = groups_Lab[x][j][:,:,1]
+          color_b = groups_Lab[x][j][:,:,2]
           target_l = groups_Lab[x][k][:,:,0]
           target_ab = groups_Lab[x][k][:,:,1:2]
 
-          X_image = []
-          X_image[:,:,0] = target_l
-          X_image[:,:,1:2] = color_ab
+          X_channels = [target_l, color_a, color_b]
+          X_image = np.stack(X_channels, axis=-1)
           train_X.append(X_image)
           train_y.append(target_ab)
 
   return [train_X, train_y]
+
+def show_lab_image(image):
+  rgb_image = cv2.cvtColor(image, cv2.COLOR_Lab2RGB)
+  plt.imshow(rgb_image)
 
 
 

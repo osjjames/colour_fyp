@@ -19,36 +19,39 @@ def compare_frames(frame1, frame2, binCount = 16):
   return similarity
 
 
-def split_video(path):
-  frames = []
+def split_video(path, color = False):
+  colorFrames = []
+  grayFrames = []
   vid = cv2.VideoCapture(path)  # Import video
-  success,frame = vid.read()   # Read first frame
+  success,frame = vid.read()   # Read first frame (color order is BGR)
   while success:
-    grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convert to grayscale
-    frames.append(grayFrame)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    colorFrames.append(frame)
+    grayFrame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY) # Convert to grayscale
+    grayFrames.append(grayFrame)
     success,frame = vid.read()  # Read next frame
-  if len(frames) == 0:
+  if len(grayFrames) == 0:
     print('Could not load video')
 
   groups = []
   groups.append([])
   curr_group = 0
-  for x in tqdm_notebook(range(len(frames) - 2)):
-    similarity = compare_frames(frames[x], frames[x+1])
-    groups[curr_group].append(frames[x])
+  for x in tqdm_notebook(range(len(grayFrames) - 2)):
+    similarity = compare_frames(grayFrames[x], grayFrames[x+1])
+    groups[curr_group].append(colorFrames[x] if color else grayFrames[x])
 
     if similarity < 0.5:
       fig = plt.figure()
       ax1 = fig.add_subplot(1,2,1)
-      ax1.imshow(frames[x])
+      ax1.imshow(colorFrames[x] if color else grayFrames[x])
       ax2 = fig.add_subplot(1,2,2)
-      ax2.imshow(frames[x+1])
+      ax2.imshow(colorFrames[x+1] if color else grayFrames[x+1])
       plt.show()
       print('Similarity: ' + str(similarity))
       groups.append([])
       curr_group += 1
 
-  groups[curr_group].append(frames[len(frames) - 1])
+  groups[curr_group].append(colorFrames[len(colorFrames) - 1] if color else grayFrames[len(grayFrames) - 1])
   return groups
 
 
