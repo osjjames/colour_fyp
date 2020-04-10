@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from tqdm import tqdm_notebook
+from tqdm import tqdm_notebook, tqdm
 
 def compare_frames(frame1, frame2, binCount = 16):
   assert frame1.shape == frame2.shape, "Frames must be of equal dimensions"
@@ -19,7 +19,7 @@ def compare_frames(frame1, frame2, binCount = 16):
   return similarity
 
 
-def split_video(path, color = False):
+def split_video(path, tolerance = 0.5, color = False, show_cuts = False):
   colorFrames = []
   grayFrames = []
   vid = cv2.VideoCapture(path)  # Import video
@@ -36,17 +36,18 @@ def split_video(path, color = False):
   groups = []
   groups.append([])
   curr_group = 0
-  for x in tqdm_notebook(range(len(grayFrames) - 2)):
+  for x in tqdm(range(len(grayFrames) - 2)):
     similarity = compare_frames(grayFrames[x], grayFrames[x+1])
     groups[curr_group].append(colorFrames[x] if color else grayFrames[x])
 
-    if similarity < 0.5:
-      fig = plt.figure()
-      ax1 = fig.add_subplot(1,2,1)
-      ax1.imshow(colorFrames[x] if color else grayFrames[x])
-      ax2 = fig.add_subplot(1,2,2)
-      ax2.imshow(colorFrames[x+1] if color else grayFrames[x+1])
-      plt.show()
+    if similarity < tolerance:
+      if show_cuts:
+        fig = plt.figure()
+        ax1 = fig.add_subplot(1,2,1)
+        ax1.imshow(colorFrames[x] if color else grayFrames[x])
+        ax2 = fig.add_subplot(1,2,2)
+        ax2.imshow(colorFrames[x+1] if color else grayFrames[x+1])
+        plt.show()
       print('Similarity: ' + str(similarity))
       groups.append([])
       curr_group += 1

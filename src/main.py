@@ -1,14 +1,10 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+import gen_training_set as gts
 
-# TensorFlow and tf.keras
-# import tensorflow as tf
-# from tensorflow import keras
+# gts.training_set_from_video('/src/data/train_vids/gbh360.mp4', 5)
+gts.training_set_from_video('/src/data/train_vids/gbh360.mp4', 5)
 
-# Helper libraries
-import numpy as np
-import matplotlib.pyplot as plt
+# gts.save_images(train_X, '/src/data/train/', 'gbh-')
+# gts.save_images(train_y, '/src/data/train/', 'gbh-')
 
-print("I'll try spinning, that's a good trick")
 
-print(tf.__version__)
 

@@ -5,4 +5,4 @@ services:
     ports:
       - ${PORT}:8888
     volumes:
-      - './src:/src:ro'
+      - './src:/src'

@@ -1,4 +1,8 @@
 *.DS_Store
+src/data/train_X/*
+src/data/train_y/*
 test_frames/
 FLIC/
 *.mp4
+*.pyc
+*.ipynb
