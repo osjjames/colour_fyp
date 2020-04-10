@@ -1,9 +1,11 @@
 from histogram_test import split_video
 
+import os
+import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from tqdm import tqdm_notebook, tqdm
+from tqdm.auto import tqdm
 
 def test_rgb2lab():
   im = cv2.imread('/src/FLIC/images/2-fast-2-furious-00029661.jpg')
@@ -18,19 +20,36 @@ def test_rgb2lab():
   ax3.imshow(imLab[:,:,2])
   plt.show()
 
-def training_set_from_video(path, n): 
-  groups = split_video(path, color = True)
+def training_set_from_video(path, n, use_csv = True):
+  if use_csv:
+    groupIndices = check_for_csv(path)
+  else:
+    groupIndices = None
+
+  if groupIndices == None:
+    groupIndices = split_video(path, color = True, show_cuts = True, save_to_csv = True)
+
+  vid = cv2.VideoCapture(path)  # Import video
 
   train_X = []
   train_y = []
 
-  # groups_Lab = [[cv2.cvtColor(frame, cv2.COLOR_RGB2Lab) for frame in groups[i]] for i in range(len(groups))]
-  # curr_group_Lab = groups.copy()
   count = 0;
-  for x in range(len(groups)):
+  for x in range(len(groupIndices)):
     curr_group_Lab = []
-    for y in range(len(groups[x])):
-      curr_group_Lab.append(cv2.cvtColor(groups[x][y], cv2.COLOR_RGB2Lab))
+    if x != len(groupIndices) - 1:
+      for y in range(groupIndices[x+1] - groupIndices[x]):
+        success,frame = vid.read()   # Read next frame
+        if success:
+          curr_group_Lab.append(cv2.cvtColor(frame, cv2.COLOR_BGR2Lab))
+        else:
+          print('Video ended before expected')
+    else:
+      success,frame = vid.read()
+      while success: # We don't know how long the last group is, so read frames until we hit the end of the video
+        curr_group_Lab.append(cv2.cvtColor(frame, cv2.COLOR_BGR2Lab))
+        success,frame = vid.read()
+
 
     color_frame_indices = []
     radius = int(np.floor(n/2)) # every coloured frame should have a radius of n/2 target frames in both directions
@@ -48,14 +67,10 @@ def training_set_from_video(path, n):
 
           X_channels = [target_l, color_a, color_b]
           X_image = np.stack(X_channels, axis=-1)
-          # train_X.append(X_image)
-          # train_y.append(target)
           name = str(count)
           count += 1
           save_lab_image(X_image, '/src/data/train_X/gbh-' + name + 'X.png')
           save_lab_image(target, '/src/data/train_y/gbh-' + name + 'y.png')
-
-  # return [train_X, train_y]
 
 
 def save_lab_images(images, folder, name_prefix): # Turn off -ro flag on docker volume for this to work
@@ -66,11 +81,22 @@ def save_lab_images(images, folder, name_prefix): # Turn off -ro flag on docker 
 def save_lab_image(image, save_path):
   if not cv2.imwrite(save_path, cv2.cvtColor(image, cv2.COLOR_Lab2BGR)):
      raise Exception("Could not write image")
-  
 
 def show_lab_image(image):
   rgb_image = cv2.cvtColor(image, cv2.COLOR_Lab2RGB)
   plt.imshow(rgb_image)
+
+def check_for_csv(path):
+  csv_path = os.path.splitext(path)[0] + '.csv'
+  if os.path.isfile(csv_path):
+    with open(csv_path, newline='') as file: # Read csv file of frame group indices
+      reader = csv.reader(file)
+      data = list(reader)
+    data = np.ravel(data) # Flatten the list
+    data = [int(i) for i in data] # Convert all elements to ints
+    return data
+  else:
+    return None
 
 
 

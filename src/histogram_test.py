@@ -1,7 +1,8 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from tqdm import tqdm_notebook, tqdm
+from tqdm.auto import tqdm
 
 def compare_frames(frame1, frame2, binCount = 16):
   assert frame1.shape == frame2.shape, "Frames must be of equal dimensions"
@@ -19,41 +20,42 @@ def compare_frames(frame1, frame2, binCount = 16):
   return similarity
 
 
-def split_video(path, tolerance = 0.5, color = False, show_cuts = False):
-  colorFrames = []
-  grayFrames = []
+def split_video(path, threshold = 0.5, color = False, show_cuts = False, save_to_csv = False): # Returns an array of frame indices, each one is the first frame of a group
+  groupStartIndices = [0]
+  prevFrame = None
+  prevGrayFrame = None
+  frameNumber = 0
+
   vid = cv2.VideoCapture(path)  # Import video
+
   success,frame = vid.read()   # Read first frame (color order is BGR)
   while success:
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    colorFrames.append(frame)
-    grayFrame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY) # Convert to grayscale
-    grayFrames.append(grayFrame)
+    grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convert to grayscale
+    if frameNumber != 0:
+      similarity = compare_frames(grayFrame, prevGrayFrame)
+      if similarity < threshold:
+        if show_cuts: # Display each pair of sufficiently different frames
+          fig = plt.figure()
+          ax1 = fig.add_subplot(1,2,1)
+          ax1.imshow(cv2.cvtColor(prevFrame, cv2.COLOR_BGR2RGB) if color else prevGrayFrame)
+          ax2 = fig.add_subplot(1,2,2)
+          ax2.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) if color else grayFrame)
+          plt.show()
+        print('Similarity: ' + str(similarity))
+        groupStartIndices.append(frameNumber)
+    prevFrame = frame
+    prevGrayFrame = grayFrame
+    frameNumber += 1
     success,frame = vid.read()  # Read next frame
-  if len(grayFrames) == 0:
+  if frameNumber == 0:
     print('Could not load video')
+    return None
 
-  groups = []
-  groups.append([])
-  curr_group = 0
-  for x in tqdm(range(len(grayFrames) - 2)):
-    similarity = compare_frames(grayFrames[x], grayFrames[x+1])
-    groups[curr_group].append(colorFrames[x] if color else grayFrames[x])
+  if save_to_csv:
+    csv_path = os.path.splitext(path)[0] + '.csv'
+    np.savetxt(csv_path, np.asarray(groupStartIndices), fmt="%d", delimiter=",")
 
-    if similarity < tolerance:
-      if show_cuts:
-        fig = plt.figure()
-        ax1 = fig.add_subplot(1,2,1)
-        ax1.imshow(colorFrames[x] if color else grayFrames[x])
-        ax2 = fig.add_subplot(1,2,2)
-        ax2.imshow(colorFrames[x+1] if color else grayFrames[x+1])
-        plt.show()
-      print('Similarity: ' + str(similarity))
-      groups.append([])
-      curr_group += 1
-
-  groups[curr_group].append(colorFrames[len(colorFrames) - 1] if color else grayFrames[len(grayFrames) - 1])
-  return groups
+  return groupStartIndices
 
 
 
