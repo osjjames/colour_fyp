@@ -10,11 +10,9 @@ from tensorflow.keras.regularizers import l2
 import numpy as np
 import matplotlib.pyplot as plt
 
+from config import img_rows, img_cols, kernel, num_classes
+
 l2_reg = l2(1e-3)
-img_rows = 64
-img_cols = 64
-kernel = 3
-num_classes = 313
 
 input_tensor = Input(shape=(img_rows, img_cols, 3))
 

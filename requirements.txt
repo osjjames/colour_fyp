@@ -1,3 +1,4 @@
+sklearn
 opencv-python
 cvxpy
 tqdm
