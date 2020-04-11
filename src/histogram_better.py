@@ -4,15 +4,8 @@ import matplotlib.pyplot as plt
 import cv2
 from tqdm.auto import tqdm
 
-def compare_frames(frame1, frame2, binCount = 16):
-  assert frame1.shape == frame2.shape, "Frames must be of equal dimensions"
-  (dimX, dimY) = frame1.shape
-
-  (im1, bins1, patches1) = plt.hist(frame1.ravel(), bins = binCount)  # Create histograms of pixel values
-  (im2, bins2, patches2) = plt.hist(frame2.ravel(), bins = binCount)
-  plt.clf() # Clear current figure
-
-  return similarity_naive(im1, im2, dimX, dimY)
+def compare_histograms(hist1, hist2):
+  return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
 
 
 def split_video(path, threshold = 0.5, color = False, show_cuts = False, save_to_csv = False): # Returns an array of frame indices, each one is the first frame of a group
@@ -27,7 +20,9 @@ def split_video(path, threshold = 0.5, color = False, show_cuts = False, save_to
   while success:
     grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convert to grayscale
     if frameNumber != 0:
-      similarity = compare_frames(grayFrame, prevGrayFrame)
+      histograms = get_histograms([grayFrame, prevGrayFrame])
+      (dimX, dimY) = grayFrame.shape
+      similarity = similarity_naive(histograms[0], histograms[1], dimX, dimY)
       if similarity < threshold:
         if show_cuts: # Display each pair of sufficiently different frames
           fig = plt.figure()
@@ -45,6 +40,9 @@ def split_video(path, threshold = 0.5, color = False, show_cuts = False, save_to
   if frameNumber == 0:
     print('Could not load video')
     return None
+  elif frameNumber < 9:
+    print('Video must be longer than 9 frames')
+    return None
 
   if save_to_csv:
     csv_path = os.path.splitext(path)[0] + '.csv'
@@ -52,13 +50,16 @@ def split_video(path, threshold = 0.5, color = False, show_cuts = False, save_to
 
   return groupStartIndices
 
+def get_histograms(images):
+  histograms = []
+  for image in images:
+    histograms.append(cv2.calcHist([image],[0],None,[256],[0,256]))
 
-def similarity_naive(im1, im2, dimX, dimY):
+  return histograms
+
+def similarity_naive(hist1, hist2, dimX, dimY):
   diff = 0
-  for i in range(len(im1)):
-    diff += abs(im1[i] - im2[i])  # Calculate difference between each pair of histogram bins
+  for i in range(len(hist1)):
+    diff += abs(hist1[i] - hist2[i])  # Calculate difference between each pair of histogram bins
 
   return 1 - (diff/(dimX*dimY)) # Similarity as a percentage
-
-
-

@@ -5,7 +5,8 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from tqdm.auto import tqdm
+from tqdm.auto import tqdm, trange
+from pathlib import Path
 
 def test_rgb2lab():
   im = cv2.imread('/src/FLIC/images/2-fast-2-furious-00029661.jpg')
@@ -30,12 +31,13 @@ def training_set_from_video(path, n, use_csv = True):
     groupIndices = split_video(path, color = True, show_cuts = True, save_to_csv = True)
 
   vid = cv2.VideoCapture(path)  # Import video
+  vid_name = Path('/root/dir/sub/file.ext').stem
 
   train_X = []
   train_y = []
 
   count = 0;
-  for x in range(len(groupIndices)):
+  for x in trange(len(groupIndices), desc="Group Number"):
     curr_group_Lab = []
     if x != len(groupIndices) - 1:
       for y in range(groupIndices[x+1] - groupIndices[x]):
@@ -56,7 +58,7 @@ def training_set_from_video(path, n, use_csv = True):
     for i in range(radius,len(curr_group_Lab),n): # choose every nth frame to be a coloured frame
       color_frame_indices.append(i)
 
-    for j in tqdm(color_frame_indices):
+    for j in tqdm(color_frame_indices, desc="Color Frame Batch"):
       for k in range(j-radius, j+radius+1):
         if k != j and k < len(curr_group_Lab):
           color_a = curr_group_Lab[j][:,:,1]
@@ -67,10 +69,10 @@ def training_set_from_video(path, n, use_csv = True):
 
           X_channels = [target_l, color_a, color_b]
           X_image = np.stack(X_channels, axis=-1)
-          name = str(count)
+          number = str(count)
           count += 1
-          save_lab_image(X_image, '/src/data/train_X/gbh-' + name + 'X.png')
-          save_lab_image(target, '/src/data/train_y/gbh-' + name + 'y.png')
+          save_lab_image(X_image, '/src/data/train_X/' + vid_name + number + 'X.png')
+          save_lab_image(target, '/src/data/train_y/' + vid_name + number + 'y.png')
 
 
 def save_lab_images(images, folder, name_prefix): # Turn off -ro flag on docker volume for this to work
