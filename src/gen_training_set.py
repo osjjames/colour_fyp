@@ -31,7 +31,7 @@ def training_set_from_video(path, n, use_csv = True):
     groupIndices = split_video(path, color = True, show_cuts = True, save_to_csv = True)
 
   vid = cv2.VideoCapture(path)  # Import video
-  vid_name = Path('/root/dir/sub/file.ext').stem
+  vid_name = Path(path).stem
 
   train_X = []
   train_y = []

@@ -4,62 +4,83 @@ import matplotlib.pyplot as plt
 import cv2
 from tqdm.auto import tqdm
 
+# Using HCSM9 from http://www.ee.surrey.ac.uk/CVSSP/Publications-/papers/yusof-bmvc2000.pdf
+
 def compare_histograms(hist1, hist2):
-  return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+  return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CHISQR)
 
+def split_video(path, show_cuts = False, save_to_csv = False): # Returns an array of frame indices, each one is the first frame of a group
+  group_start_indices = [0]
+  window_size = 9
+  window_centre = window_size // 2
+  frame_number = 0
 
-def split_video(path, threshold = 0.5, color = False, show_cuts = False, save_to_csv = False): # Returns an array of frame indices, each one is the first frame of a group
-  groupStartIndices = [0]
-  prevFrame = None
-  prevGrayFrame = None
-  frameNumber = 0
+  window = [] # Stores consecutive frames, and slides along 1 frame each iteration. Length is always window_size
+  window_histograms = [] # Stores histograms of corresponding frames
+  window_samples = [] # Stores dissimilarity values between window[k] and window[k+1] (called the sample of window[k])
+  next_frame = []
+  next_histogram = []
+  next_decision = 0
 
   vid = cv2.VideoCapture(path)  # Import video
+  success,frame = vid.read() # Read first frame (color order is BGR)
+  for i in range(window_size): # Gather frames of initial window
+    if not success: break
+    window.append(frame)
+    window_histograms.append(get_histogram(frame)) # Calculate histogram of each frame
+    if i > 0:
+      window_samples.append(compare_histograms(window_histograms[-2], window_histograms[-1])) # Compute sample of frame as soon as next frame has been loaded
+    frame_number += 1
+    success,frame = vid.read()
 
-  success,frame = vid.read()   # Read first frame (color order is BGR)
   while success:
-    grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convert to grayscale
-    if frameNumber != 0:
-      histograms = get_histograms([grayFrame, prevGrayFrame])
-      (dimX, dimY) = grayFrame.shape
-      similarity = similarity_naive(histograms[0], histograms[1], dimX, dimY)
-      if similarity < threshold:
-        if show_cuts: # Display each pair of sufficiently different frames
-          fig = plt.figure()
-          ax1 = fig.add_subplot(1,2,1)
-          ax1.imshow(cv2.cvtColor(prevFrame, cv2.COLOR_BGR2RGB) if color else prevGrayFrame)
-          ax2 = fig.add_subplot(1,2,2)
-          ax2.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) if color else grayFrame)
-          plt.show()
-        print('Similarity: ' + str(similarity))
-        groupStartIndices.append(frameNumber)
-    prevFrame = frame
-    prevGrayFrame = grayFrame
-    frameNumber += 1
+    next_frame = frame # Load up next frame (not included in the current window but needed for sample computation)
+    next_histogram = get_histogram(next_frame)
+    window_samples.append(compare_histograms(window_histograms[-1], next_histogram)) # Compute the last sample (this is why we loaded up the next frame)
+    threshold = get_threshold(window_samples)
+    dissimilarity = window_samples[window_centre]
+    
+    if dissimilarity > threshold and frame_number > next_decision:
+      if show_cuts: # Display each pair of sufficiently different frames
+        display_frame_pair(window[window_centre], window[window_centre+1])
+      print('Dissimilarity: ' + str(dissimilarity))
+      group_start_indices.append(frame_number-window_centre)
+      next_decision = frame_number + window_centre # After a shot is detected, no new decisions are made until half the window size has passed
+
+    window.pop(0) # Shift all window elements to the left to make room for the data of the next frame
+    window.append(next_frame)
+    window_histograms.pop(0)
+    window_histograms.append(next_histogram)
+    window_samples.pop(0) # Remove the first element, but we cannot append the new sample until the next frame is loaded up
+
+    frame_number += 1
     success,frame = vid.read()  # Read next frame
-  if frameNumber == 0:
+  if frame_number == 0:
     print('Could not load video')
     return None
-  elif frameNumber < 9:
-    print('Video must be longer than 9 frames')
+  elif frame_number < window_size:
+    print('Video must be longer than ' + str(window_size) + ' frames')
     return None
 
   if save_to_csv:
     csv_path = os.path.splitext(path)[0] + '.csv'
-    np.savetxt(csv_path, np.asarray(groupStartIndices), fmt="%d", delimiter=",")
+    np.savetxt(csv_path, np.asarray(group_start_indices), fmt="%d", delimiter=",")
 
-  return groupStartIndices
+  return group_start_indices
 
-def get_histograms(images):
-  histograms = []
-  for image in images:
-    histograms.append(cv2.calcHist([image],[0],None,[256],[0,256]))
+def get_histogram(image):
+  gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # Convert to grayscale
+  return cv2.calcHist([gray_image],[0],None,[256],[0,256])
 
-  return histograms
+def get_threshold(window_samples):
+  mean = sum(window_samples) / len(window_samples)
+  return mean*7 # Second value is a threshold in itself: how many times more dissimilar than the mean must a pair of frames be to count as a cut
 
-def similarity_naive(hist1, hist2, dimX, dimY):
-  diff = 0
-  for i in range(len(hist1)):
-    diff += abs(hist1[i] - hist2[i])  # Calculate difference between each pair of histogram bins
-
-  return 1 - (diff/(dimX*dimY)) # Similarity as a percentage
+def display_frame_pair(frame1, frame2):
+  plt.clf()
+  fig = plt.figure()
+  ax1 = fig.add_subplot(1,2,1)
+  ax1.imshow(cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB))
+  ax2 = fig.add_subplot(1,2,2)
+  ax2.imshow(cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB))
+  plt.show()
