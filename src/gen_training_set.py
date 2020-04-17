@@ -28,7 +28,7 @@ def training_set_from_video(path, n, use_csv = True):
     groupIndices = None
 
   if groupIndices == None:
-    groupIndices = split_video(path, color = True, show_cuts = True, save_to_csv = True)
+    groupIndices = split_video(path, show_cuts = True, save_to_csv = True)
 
   vid = cv2.VideoCapture(path)  # Import video
   vid_name = Path(path).stem
@@ -69,10 +69,11 @@ def training_set_from_video(path, n, use_csv = True):
 
           X_channels = [target_l, color_a, color_b]
           X_image = np.stack(X_channels, axis=-1)
-          number = str(count)
+          name = vid_name + '-' + str(count) + '.png'
           count += 1
           save_lab_image(X_image, '/src/data/train_X/' + vid_name + number + 'X.png')
-          save_lab_image(target, '/src/data/train_y/' + vid_name + number + 'y.png')
+          save_lab_image(X_image, '/src/data/train_X/' + name)
+          save_lab_image(target, '/src/data/train_y/' + name)
 
 
 def save_lab_images(images, folder, name_prefix): # Turn off -ro flag on docker volume for this to work

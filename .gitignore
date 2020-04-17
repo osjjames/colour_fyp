@@ -6,3 +6,6 @@ FLIC/
 *.mp4
 *.pyc
 *.ipynb
+*.hdf5
+logs/
+src/data/*_names.txt

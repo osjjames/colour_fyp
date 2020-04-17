@@ -13,7 +13,8 @@ from tensorflow.keras.utils import Sequence
 
 from config import batch_size, img_rows, img_cols, nb_neighbors
 
-image_folder = '/src/data/train/'
+image_X_folder = '/src/data/train_X/' # Folder of input training data
+image_y_folder = '/src/data/train_y/' # Folder of ground truth data to evaluate outputs against
 
 
 def get_soft_encoding(image_ab, nn_finder, nb_q):
@@ -36,16 +37,19 @@ def get_soft_encoding(image_ab, nn_finder, nb_q):
 
 
 class DataGenSequence(Sequence):
-    def __init__(self):
-        names_file = 'train_names.txt'
+    def __init__(self, usage):
+        self.usage = usage
+        if usage == 'train':
+            names_file = '/src/data/train_names.txt'
+        else:
+            names_file = '/src/data/valid_names.txt'
 
         with open(names_file, 'r') as f:
             self.names = f.read().splitlines()
-
         np.random.shuffle(self.names)
 
         # Load the array of quantized ab value
-        q_ab = np.load("/src/data/pts_in_hull.npy")
+        q_ab = np.load('/src/data/pts_in_hull.npy')
         self.nb_q = q_ab.shape[0]
         # Fit a NN to q_ab
         self.nn_finder = nn.NearestNeighbors(n_neighbors=nb_neighbors, algorithm='ball_tree').fit(q_ab)
@@ -59,41 +63,42 @@ class DataGenSequence(Sequence):
         out_img_rows, out_img_cols = img_rows // 4, img_cols // 4
 
         length = min(batch_size, (len(self.names) - i))
-        batch_x = np.empty((length, img_rows, img_cols, 1), dtype=np.float32)
+        batch_x = np.empty((length, img_rows, img_cols, 3), dtype=np.float32)
         batch_y = np.empty((length, out_img_rows, out_img_cols, self.nb_q), dtype=np.float32)
 
         for i_batch in range(length):
             name = self.names[i]
-            filename = os.path.join(image_folder, name)
-            # b: 0 <=b<=255, g: 0 <=g<=255, r: 0 <=r<=255.
-            bgr = cv2.imread(filename)
-            # bgr = cv2.resize(bgr, (img_rows, img_cols), cv2.INTER_CUBIC)
-            gray = cv2.imread(filename, 0)
-            # gray = cv2.resize(gray, (img_rows, img_cols), cv2.INTER_CUBIC)
-            lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
-            x = gray / 255.
+            x = read_lab(os.path.join(image_X_folder, name))
+            y = read_lab(os.path.join(image_y_folder, name))
 
-            out_lab = cv2.resize(lab, (out_img_rows, out_img_cols), cv2.INTER_CUBIC)
+            y = cv2.resize(y, (out_img_cols, out_img_rows), cv2.INTER_CUBIC)
             # Before: 42 <=a<= 226, 20 <=b<= 223
             # After: -86 <=a<= 98, -108 <=b<= 95
-            out_ab = out_lab[:, :, 1:].astype(np.int32) - 128
+            y_ab = y[:, :, 1:].astype(np.int32) - 128
 
-            y = get_soft_encoding(out_ab, self.nn_finder, self.nb_q)
+            y = get_soft_encoding(y_ab, self.nn_finder, self.nb_q)
 
             if np.random.random_sample() > 0.5:
                 x = np.fliplr(x)
                 y = np.fliplr(y)
 
-            batch_x[i_batch, :, :, 0] = x
+            batch_x[i_batch] = x
             batch_y[i_batch] = y
 
             i += 1
+
+        print(str(batch_x.shape) + ' ' + str(batch_y.shape))
 
         return batch_x, batch_y
 
     def on_epoch_end(self):
         np.random.shuffle(self.names)
 
+def read_lab(filename):
+    # b: 0 <=b<=255, g: 0 <=g<=255, r: 0 <=r<=255.
+    bgr = cv2.imread(filename)
+    lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
+    return lab
 
 def train_gen():
     return DataGenSequence('train')
@@ -104,9 +109,10 @@ def valid_gen():
 
 
 def split_data():
-    names = [f for f in os.listdir(image_folder) if f.lower().endswith('.jpg')]
+    names = [f for f in os.listdir(image_X_folder) if f.lower().endswith('.png')]
 
-    num_samples = len(names)  # 1341430
+    # num_samples = len(names)  # 1341430
+    num_samples = 1000
     print('num_samples: ' + str(num_samples))
 
     num_train_samples = int(num_samples * 0.992)
@@ -121,10 +127,10 @@ def split_data():
     # with open('names.txt', 'w') as file:
     #     file.write('\n'.join(names))
 
-    with open('valid_names.txt', 'w') as file:
+    with open('/src/data/valid_names.txt', 'w') as file:
         file.write('\n'.join(valid_names))
 
-    with open('train_names.txt', 'w') as file:
+    with open('/src/data/train_names.txt', 'w') as file:
         file.write('\n'.join(train_names))
 
 
