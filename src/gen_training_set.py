@@ -71,7 +71,6 @@ def training_set_from_video(path, n, use_csv = True):
           X_image = np.stack(X_channels, axis=-1)
           name = vid_name + '-' + str(count) + '.png'
           count += 1
-          save_lab_image(X_image, '/src/data/train_X/' + vid_name + number + 'X.png')
           save_lab_image(X_image, '/src/data/train_X/' + name)
           save_lab_image(target, '/src/data/train_y/' + name)
 
