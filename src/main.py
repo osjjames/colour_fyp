@@ -1,6 +1,6 @@
-import gen_training_set as gts
-import histogram_test as ht
-import histogram_better as hb
+# import gen_training_set as gts
+# import histogram_test as ht
+# import histogram_better as hb
 import time
 
 import cnn

@@ -10,6 +10,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLRO
 # Helper libraries
 import numpy as np
 import matplotlib.pyplot as plt
+import subprocess
 
 from cnn_data_gen import train_gen, valid_gen
 from config import img_rows, img_cols, kernel, num_classes, num_train_samples, num_valid_samples, batch_size, epochs, patience
@@ -17,6 +18,7 @@ from config import img_rows, img_cols, kernel, num_classes, num_train_samples, n
 l2_reg = l2(1e-3)
 
 checkpoint_models_path = '/src/data/models/'
+gcs_models_path = 'gs://osjjames-aiplatform/models/'
 
 # Callbacks
 tensor_board = keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=True)
@@ -32,8 +34,10 @@ class MyCbk(keras.callbacks.Callback):
         self.model_to_save = model
 
     def on_epoch_end(self, epoch, logs=None):
-        fmt = checkpoint_models_path + 'model.%02d-%.4f.hdf5'
-        self.model_to_save.save(fmt % (epoch, logs['val_loss']))
+        filename = 'model.%02d-%.4f.hdf5' % (epoch, logs['val_loss'])
+        fmt = checkpoint_models_path + filename
+        self.model_to_save.save(fmt) # Save to container filesystem
+        subprocess.run(["gsutil", "-m", "cp", "-r", fmt, gcs_models_path + filename]) # Save to Google Cloud Storage
 
 def create():
   input_tensor = Input(shape=(img_rows, img_cols, 3))
@@ -70,13 +74,13 @@ def create():
   callbacks = [tensor_board, model_checkpoint, early_stop, reduce_lr]
 
   # Start Fine-tuning
-  model.fit_generator(train_gen(),
-                          steps_per_epoch=num_train_samples // batch_size,
-                          validation_data=valid_gen(),
-                          validation_steps=num_valid_samples // batch_size,
-                          epochs=epochs,
-                          verbose=1,
-                          callbacks=callbacks,
-                          use_multiprocessing=True,
-                          workers=8
-                          )
+  model.fit(train_gen(),
+              steps_per_epoch=num_train_samples // batch_size,
+              validation_data=valid_gen(),
+              validation_steps=num_valid_samples // batch_size,
+              epochs=epochs,
+              verbose=1,
+              callbacks=callbacks,
+              use_multiprocessing=True,
+              workers=8
+              )

@@ -1,8 +1,0 @@
-version: '3'
-services:
-  test:
-    build: .
-    ports:
-      - ${PORT}:8888
-    volumes:
-      - './src:/src'

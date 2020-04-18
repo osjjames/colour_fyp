@@ -1,6 +1,6 @@
 sklearn
 opencv-python
-cvxpy
 tqdm
-jupyter
-tensorflow
+tensorflow-gpu
+numpy
+matplotlib
