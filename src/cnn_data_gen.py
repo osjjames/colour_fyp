@@ -96,7 +96,9 @@ class DataGenSequence(Sequence):
 
 def read_lab(filename):
     # b: 0 <=b<=255, g: 0 <=g<=255, r: 0 <=r<=255.
+    print("Filename: " + str(filename))
     bgr = cv2.imread(filename)
+    print("Shape: " + str(bgr.shape))
     lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
     return lab
 

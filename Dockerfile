@@ -2,13 +2,14 @@
 # https://localhost:8888
 
 # Dockerfile-gpu
-FROM nvidia/cuda:9.0-cudnn7-runtime
+FROM nvidia/cuda:10.0-cudnn7-runtime
 
 # Installs necessary dependencies.
 RUN apt-get update && apt-get install -y --no-install-recommends \
          wget \
          curl \
          python3 \
+         python3-distutils \
          libsm6 libxext6 libxrender-dev libglib2.0-0\
          build-essential && \
      rm -rf /var/lib/apt/lists/*
@@ -57,8 +58,6 @@ RUN mkdir /src/data
 COPY ./src/data/train_names.txt /src/data/train_names.txt
 COPY ./src/data/valid_names.txt /src/data/valid_names.txt
 COPY ./src/data/pts_in_hull.npy /src/data/pts_in_hull.npy
-RUN mkdir /src/data/train_X
-RUN mkdir /src/data/train_y
-RUN mkdir /src/data/models
+RUN mkdir /src/data/train_X /src/data/train_y /src/data/models
 
 CMD ["sh", "./setup.sh"]

@@ -1,6 +1,6 @@
 sklearn
 opencv-python
 tqdm
-tensorflow-gpu
+tensorflow-gpu==2.0.0
 numpy
 matplotlib
