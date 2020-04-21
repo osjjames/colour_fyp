@@ -48,16 +48,15 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
 # Copies the trainer code 
-# RUN mkdir /src
+RUN mkdir /src/data
+RUN mkdir /src/data/models
 COPY ./src/setup.sh /src/setup.sh
 COPY ./src/cnn.py /src/cnn.py
 COPY ./src/cnn_data_gen.py /src/cnn_data_gen.py
 COPY ./src/config.py /src/config.py
 COPY ./src/main.py /src/main.py
-RUN mkdir /src/data
 COPY ./src/data/train_names.txt /src/data/train_names.txt
 COPY ./src/data/valid_names.txt /src/data/valid_names.txt
 COPY ./src/data/pts_in_hull.npy /src/data/pts_in_hull.npy
-RUN mkdir /src/data/train_X /src/data/train_y /src/data/models
 
 CMD ["sh", "./setup.sh"]

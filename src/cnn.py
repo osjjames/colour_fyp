@@ -63,6 +63,8 @@ def create():
   outputs = Conv2D(num_classes, (1, 1), activation='softmax', padding='same', name='pred')(x)
 
   model = Model(inputs=input_tensor, outputs=outputs, name="ColorNet")
+  # rewrite the callback: saving through the original model and not the multi-gpu model.
+  model_checkpoint = MyCbk(model)
 
 
   sgd = keras.optimizers.SGD(lr=0.001, momentum=0.9, nesterov=True, clipnorm=5.)
@@ -82,5 +84,6 @@ def create():
               verbose=1,
               callbacks=callbacks,
               use_multiprocessing=True,
-              workers=8
+              workers=8,
+              shuffle=False
               )

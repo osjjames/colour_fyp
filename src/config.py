@@ -9,4 +9,4 @@ num_train_samples = 992 #!
 num_valid_samples = 8 #!
 patience = 1
 
-# Variables with ! next to them must be manually changed before a new training set is used
+# Variables with ! next to them must be manually changed before new training data is used
