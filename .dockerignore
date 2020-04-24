@@ -1,0 +1,10 @@
+src/data/models
+src/data/train_vids
+src/data/train_X
+src/data/train_y
+src/FLIC
+# src/liblbfgs
+src/logs
+# src/pylbfgs
+src/test_vids
+# src/zhang

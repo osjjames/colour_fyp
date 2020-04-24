@@ -5,4 +5,5 @@ services:
     ports:
       - ${PORT}:8888
     volumes:
-      - './src:/src'
+      - './src:/src:ro'
+      - '/Volumes/MAC/2019 MAC/FYP_workspace:/data'

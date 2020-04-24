@@ -1,4 +1,4 @@
-from histogram_test import split_video
+from histogram_better import split_video
 
 import os
 import csv
@@ -21,6 +21,11 @@ def test_rgb2lab():
   ax3.imshow(imLab[:,:,2])
   plt.show()
 
+def training_set_from_folder(path, n, use_csv = True):
+  names = [f for f in os.listdir(path) if (f.lower().endswith('.avi') or f.lower().endswith('.mp4'))]
+  for name in names:
+    training_set_from_video(os.path.join(path, name), n, use_csv)
+
 def training_set_from_video(path, n, use_csv = True):
   if use_csv:
     groupIndices = check_for_csv(path)
@@ -28,6 +33,7 @@ def training_set_from_video(path, n, use_csv = True):
     groupIndices = None
 
   if groupIndices == None:
+    print('splitting vid: ' + path)
     groupIndices = split_video(path, show_cuts = True, save_to_csv = True)
 
   vid = cv2.VideoCapture(path)  # Import video
@@ -59,20 +65,20 @@ def training_set_from_video(path, n, use_csv = True):
       color_frame_indices.append(i)
 
     for j in tqdm(color_frame_indices, desc="Color Frame Batch"):
-      for k in range(j-radius, j+radius+1):
-        if k != j and k < len(curr_group_Lab):
-          color_a = curr_group_Lab[j][:,:,1]
-          color_b = curr_group_Lab[j][:,:,2]
-          target = curr_group_Lab[k]
-          target_l = curr_group_Lab[k][:,:,0]
-          target_ab = curr_group_Lab[k][:,:,1:2]
+      k = j + random_int_not_zero(-radius, min(radius, len(curr_group_Lab)-j-1)) #j = coloured frame index, k = target frame index (i.e. a frame within +-radius of j)
 
-          X_channels = [target_l, color_a, color_b]
-          X_image = np.stack(X_channels, axis=-1)
-          name = vid_name + '-' + str(count) + '.png'
-          count += 1
-          save_lab_image(X_image, '/src/data/train_X/' + name)
-          save_lab_image(target, '/src/data/train_y/' + name)
+      color_a = curr_group_Lab[j][:,:,1]
+      color_b = curr_group_Lab[j][:,:,2]
+      target = curr_group_Lab[k]
+      target_l = curr_group_Lab[k][:,:,0]
+      target_ab = curr_group_Lab[k][:,:,1:2]
+
+      X_channels = [target_l, color_a, color_b]
+      X_image = np.stack(X_channels, axis=-1)
+      name = vid_name + '-' + str(count) + '.png'
+      count += 1
+      save_lab_image(X_image, '/data/train_X/' + name)
+      save_lab_image(target, '/data/train_y/' + name)
 
 
 def save_lab_images(images, folder, name_prefix): # Turn off -ro flag on docker volume for this to work
@@ -99,6 +105,13 @@ def check_for_csv(path):
     return data
   else:
     return None
+
+def random_int_not_zero(low, high): # returns random int n where -low <= n <= high, n != 0. (high argument is inlusive)
+  n = np.random.randint(low, high)
+  if n >= 0:
+    n += 1
+  return n
+
 
 
 

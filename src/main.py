@@ -7,8 +7,8 @@ import cnn
 
 t = time.time()
 # gts.training_set_from_video('/src/data/train_vids/gbh360.mp4', 5)
-cnn.create()
-# gts.training_set_from_video('/src/test_vids/vid.mp4', 5, use_csv = True)
+
+gts.training_set_from_folder('/data/Hollywood2/AVIClipsScenes/', 5, use_csv = False)
 # hb.split_video('/src/data/train_vids/grand_budapest_hotel.mp4', show_cuts = True, save_to_csv = True)
 
 
