@@ -13,8 +13,8 @@ from tensorflow.keras.utils import Sequence
 
 from config import batch_size, img_rows, img_cols, nb_neighbors
 
-image_X_folder = '/src/data/train_X/' # Folder of input training data
-image_y_folder = '/src/data/train_y/' # Folder of ground truth data to evaluate outputs against
+image_X_folder = '/data/train_X/' # Folder of input training data
+image_y_folder = '/data/train_y/' # Folder of ground truth data to evaluate outputs against
 
 
 def get_soft_encoding(image_ab, nn_finder, nb_q):
@@ -40,16 +40,16 @@ class DataGenSequence(Sequence):
     def __init__(self, usage):
         self.usage = usage
         if usage == 'train':
-            names_file = '/src/data/train_names.txt'
+            names_file = '/data/train_names.txt'
         else:
-            names_file = '/src/data/valid_names.txt'
+            names_file = '/data/valid_names.txt'
 
         with open(names_file, 'r') as f:
             self.names = f.read().splitlines()
         np.random.shuffle(self.names)
 
         # Load the array of quantized ab value
-        q_ab = np.load('/src/data/pts_in_hull.npy')
+        q_ab = np.load('/data/pts_in_hull.npy')
         self.nb_q = q_ab.shape[0]
         # Fit a NN to q_ab
         self.nn_finder = nn.NearestNeighbors(n_neighbors=nb_neighbors, algorithm='ball_tree').fit(q_ab)
@@ -111,8 +111,7 @@ def valid_gen():
 def split_data():
     names = [f for f in os.listdir(image_X_folder) if f.lower().endswith('.png')]
 
-    # num_samples = len(names)  # 1341430
-    num_samples = 1000
+    num_samples = len(names)  # 1341430
     print('num_samples: ' + str(num_samples))
 
     num_train_samples = int(num_samples * 0.992)
@@ -127,10 +126,10 @@ def split_data():
     # with open('names.txt', 'w') as file:
     #     file.write('\n'.join(names))
 
-    with open('/src/data/valid_names.txt', 'w') as file:
+    with open('/data/valid_names.txt', 'w') as file:
         file.write('\n'.join(valid_names))
 
-    with open('/src/data/train_names.txt', 'w') as file:
+    with open('/data/train_names.txt', 'w') as file:
         file.write('\n'.join(train_names))
 
 
