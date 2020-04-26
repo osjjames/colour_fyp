@@ -70,6 +70,8 @@ class DataGenSequence(Sequence):
             name = self.names[i]
             x = read_lab(os.path.join(image_X_folder, name))
             y = read_lab(os.path.join(image_y_folder, name))
+            
+            x = cv2.resize(x, (256,256))
 
             y = cv2.resize(y, (out_img_cols, out_img_rows), cv2.INTER_CUBIC)
             # Before: 42 <=a<= 226, 20 <=b<= 223
