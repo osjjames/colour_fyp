@@ -1,5 +1,5 @@
-img_rows = 346 #!
-img_cols = 640 #!
+img_rows = 256 #!
+img_cols = 256 #!
 kernel = 3
 num_classes = 313
 batch_size = 1

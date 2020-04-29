@@ -1,7 +1,5 @@
-from histogram_test import split_video
+from histogram_better import split_video
 
-import os
-import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -22,13 +20,7 @@ def test_rgb2lab():
   plt.show()
 
 def training_set_from_video(path, n, use_csv = True):
-  if use_csv:
-    groupIndices = check_for_csv(path)
-  else:
-    groupIndices = None
-
-  if groupIndices == None:
-    groupIndices = split_video(path, show_cuts = True, save_to_csv = True)
+  groupIndices = split_video(path, show_cuts = True, use_csv = use_csv, save_to_csv = True)
 
   vid = cv2.VideoCapture(path)  # Import video
   vid_name = Path(path).stem
@@ -38,20 +30,7 @@ def training_set_from_video(path, n, use_csv = True):
 
   count = 0;
   for x in trange(len(groupIndices), desc="Group Number"):
-    curr_group_Lab = []
-    if x != len(groupIndices) - 1:
-      for y in range(groupIndices[x+1] - groupIndices[x]):
-        success,frame = vid.read()   # Read next frame
-        if success:
-          curr_group_Lab.append(cv2.cvtColor(frame, cv2.COLOR_BGR2Lab))
-        else:
-          print('Video ended before expected')
-    else:
-      success,frame = vid.read()
-      while success: # We don't know how long the last group is, so read frames until we hit the end of the video
-        curr_group_Lab.append(cv2.cvtColor(frame, cv2.COLOR_BGR2Lab))
-        success,frame = vid.read()
-
+    curr_group_Lab = read_group_frames_lab(groupIndices, x)
 
     color_frame_indices = []
     radius = int(np.floor(n/2)) # every coloured frame should have a radius of n/2 target frames in both directions
@@ -74,6 +53,7 @@ def training_set_from_video(path, n, use_csv = True):
           save_lab_image(X_image, '/src/data/train_X/' + name)
           save_lab_image(target, '/src/data/train_y/' + name)
 
+  vid.release()
 
 def save_lab_images(images, folder, name_prefix): # Turn off -ro flag on docker volume for this to work
   for i in range(len(images)):
@@ -88,21 +68,19 @@ def show_lab_image(image):
   rgb_image = cv2.cvtColor(image, cv2.COLOR_Lab2RGB)
   plt.imshow(rgb_image)
 
-def check_for_csv(path):
-  csv_path = os.path.splitext(path)[0] + '.csv'
-  if os.path.isfile(csv_path):
-    with open(csv_path, newline='') as file: # Read csv file of frame group indices
-      reader = csv.reader(file)
-      data = list(reader)
-    data = np.ravel(data) # Flatten the list
-    data = [int(i) for i in data] # Convert all elements to ints
-    return data
+def read_group_frames_lab(group_indices, group_number, vid_capture):
+  curr_group_Lab = []
+  if group_number != len(group_indices) - 1:
+    for y in range(group_indices[group_number+1] - group_indices[group_number]):
+      success,frame = vid_capture.read()   # Read next frame
+      if success:
+        curr_group_Lab.append(cv2.cvtColor(frame, cv2.COLOR_BGR2Lab))
+      else:
+        print('Video ended before expected')
   else:
-    return None
+    success,frame = vid_capture.read()
+    while success: # We don't know how long the last group is, so read frames until we hit the end of the video
+      curr_group_Lab.append(cv2.cvtColor(frame, cv2.COLOR_BGR2Lab))
+      success,frame = vid_capture.read()
 
-
-
-  
- 
-
-
+  return curr_group_Lab

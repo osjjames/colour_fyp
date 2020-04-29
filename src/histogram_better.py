@@ -1,4 +1,5 @@
 import os
+import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -9,7 +10,12 @@ from tqdm.auto import tqdm
 def compare_histograms(hist1, hist2):
   return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CHISQR)
 
-def split_video(path, show_cuts = False, save_to_csv = False): # Returns an array of frame indices, each one is the first frame of a group
+def split_video(path, show_cuts = False, use_csv = True, save_to_csv = True): # Returns an array of frame indices, each one is the first frame of a group
+  if use_csv:
+    group_start_indices = check_for_csv(path)
+    if group_start_indices != None:
+      return group_start_indices
+
   group_start_indices = [0]
   window_size = 9
   window_centre = window_size // 2
@@ -66,7 +72,20 @@ def split_video(path, show_cuts = False, save_to_csv = False): # Returns an arra
     csv_path = os.path.splitext(path)[0] + '.csv'
     np.savetxt(csv_path, np.asarray(group_start_indices), fmt="%d", delimiter=",")
 
+  vid.release()
   return group_start_indices
+
+def check_for_csv(path):
+  csv_path = os.path.splitext(path)[0] + '.csv'
+  if os.path.isfile(csv_path):
+    with open(csv_path, newline='') as file: # Read csv file of frame group indices
+      reader = csv.reader(file)
+      data = list(reader)
+    data = np.ravel(data) # Flatten the list
+    data = [int(i) for i in data] # Convert all elements to ints
+    return data
+  else:
+    return None
 
 def get_histogram(image):
   gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # Convert to grayscale

@@ -2,7 +2,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.models import Model
+from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input, Conv2D, Flatten, BatchNormalization, UpSampling2D, Reshape
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
@@ -10,9 +10,11 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLRO
 # Helper libraries
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
+import scipy.ndimage.interpolation as sni
 
-from cnn_data_gen import train_gen, valid_gen
-from config import img_rows, img_cols, kernel, num_classes, num_train_samples, num_valid_samples, batch_size, epochs, patience
+from cnn_data_gen import train_gen, valid_gen, read_lab
+from config import img_rows, img_cols, kernel, num_classes, num_train_samples, num_valid_samples, batch_size, epochs, patience, num_classes
 
 l2_reg = l2(1e-3)
 
@@ -66,6 +68,10 @@ def create():
 
   print(model.summary())
 
+  return model
+
+def train(model):
+
   # Final callbacks
   callbacks = [tensor_board, model_checkpoint, early_stop, reduce_lr]
 
@@ -80,3 +86,54 @@ def create():
                           use_multiprocessing=True,
                           workers=8
                           )
+
+  return model
+
+def predict_lab_from_file(model, image_path):
+  orig_image = read_lab(image_path)
+  return predict_lab(model, orig_image)
+  
+def predict_lab(model, orig_image):
+  (orig_h, orig_w, channels) = orig_image.shape
+
+  image = cv2.resize(orig_image, (img_rows, img_cols))
+
+  h, w = img_rows // 4, img_cols // 4
+
+  q_ab = np.load('/src/data/pts_in_hull.npy')
+  nb_q = q_ab.shape[0]
+
+  image_batch = np.empty((1, img_rows, img_cols, 3), dtype=np.float32)
+  image_batch[0] = image
+
+  output_ab = model.predict(image_batch)
+  output_ab = output_ab.reshape((h * w, nb_q))
+
+  output_ab = np.exp(np.log(output_ab + 1e-8) / 0.35)
+  output_ab = output_ab / np.sum(output_ab, 1)[:, np.newaxis]
+
+  q_a = q_ab[:, 0].reshape((1, num_classes))
+  q_b = q_ab[:, 1].reshape((1, num_classes))
+
+  X_a = np.sum(output_ab * q_a, 1).reshape((h, w))
+  X_b = np.sum(output_ab * q_b, 1).reshape((h, w))
+
+  X_a = cv2.resize(X_a, (orig_w, orig_h), cv2.INTER_CUBIC)
+  X_b = cv2.resize(X_b, (orig_w, orig_h), cv2.INTER_CUBIC)
+
+  X_a += 128
+  X_b += 128
+
+  # plt.imshow(X_a)
+  # plt.imshow(X_b)
+
+  # X_a = sni.zoom(X_a,(1.*orig_h/img_rows,1.*orig_w/img_cols,1))
+  # X_b = sni.zoom(X_b,(1.*orig_h/img_rows,1.*orig_w/img_cols,1))
+
+  out_lab = np.zeros((orig_h, orig_w, 3), dtype=np.int32)
+  out_lab[:, :, 0] = orig_image[:, :, 0]
+  out_lab[:, :, 1] = X_a
+  out_lab[:, :, 2] = X_b
+
+  out_lab = out_lab.astype(np.uint8)
+  return out_lab
