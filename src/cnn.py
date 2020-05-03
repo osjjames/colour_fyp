@@ -93,7 +93,7 @@ def predict_lab_from_file(model, image_path):
   orig_image = read_lab(image_path)
   return predict_lab(model, orig_image)
   
-def predict_lab(model, orig_image):
+def predict_lab(model, orig_image): # Passes an image through the CNN and processes the output into CIELAB format
   (orig_h, orig_w, channels) = orig_image.shape
 
   image = cv2.resize(orig_image, (img_rows, img_cols))
@@ -107,7 +107,7 @@ def predict_lab(model, orig_image):
   image_batch[0] = image
 
   output_ab = model.predict(image_batch)
-  output_ab = output_ab.reshape((h * w, nb_q))
+  output_ab = output_ab.reshape((h * w, nb_q)) 
 
   output_ab = np.exp(np.log(output_ab + 1e-8) / 0.35)
   output_ab = output_ab / np.sum(output_ab, 1)[:, np.newaxis]

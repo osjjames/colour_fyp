@@ -33,7 +33,7 @@ def colorise_video(video_path, n):
     for j in tqdm(color_frame_indices, desc="Color Frame Batch"):
       colour_frame = zhang.colorize(curr_group_Lab[j], lab_only = True) # Colourise every nth frame
       # colour_frame = curr_group_Lab[j]
-      hb.display_frame_pair(cv2.cvtColor(curr_group_Lab[j], cv2.COLOR_Lab2BGR), cv2.cvtColor(colour_frame, cv2.COLOR_Lab2BGR))
+      # hb.display_frame_pair(cv2.cvtColor(curr_group_Lab[j], cv2.COLOR_Lab2BGR), cv2.cvtColor(colour_frame, cv2.COLOR_Lab2BGR))
       color_a = colour_frame[:,:,1] # Extract a + b channels
       color_b = colour_frame[:,:,2]
       for k in range(j-radius, j+radius+1):
@@ -45,7 +45,7 @@ def colorise_video(video_path, n):
           X_image = np.stack(X_channels, axis=-1) # Combine target frame L channel with colourised frame a+b channels
 
           new_frame = cnn.predict_lab(model, X_image) # Put through CNN to smooth colour differences
-          hb.display_frame_pair(cv2.cvtColor(X_image, cv2.COLOR_Lab2BGR), cv2.cvtColor(new_frame, cv2.COLOR_Lab2BGR))
+          # hb.display_frame_pair(cv2.cvtColor(X_image, cv2.COLOR_Lab2BGR), cv2.cvtColor(new_frame, cv2.COLOR_Lab2BGR))
           new_frame_rgb = cv2.cvtColor(new_frame, cv2.COLOR_Lab2BGR)
 
         if k == j and k < len(curr_group_Lab):
@@ -97,10 +97,10 @@ def colorise_video_one(video_path):
 def main():
   t = time.time()
   # gts.training_set_from_video('/src/data/train_vids/gbh360.mp4', 5)
-  # cnn.create()
+  cnn.create()
   # gts.training_set_from_video('/src/test_vids/vid.mp4', 5, use_csv = True)
   # hb.split_video('/src/data/train_vids/grand_budapest_hotel.mp4', show_cuts = True, save_to_csv = True)
-  colorise_video('/src/test_vids/vid.mp4', 10)
+  # colorise_video('/src/test_vids/vid4.mp4', 2)
 
   # gts.save_images(train_X, '/src/data/train/', 'gbh-')
   # gts.save_images(train_y, '/src/data/train/', 'gbh-')
