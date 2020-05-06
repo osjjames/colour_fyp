@@ -3,20 +3,19 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from tqdm.auto import tqdm
 
 # Using HCSM9 from http://www.ee.surrey.ac.uk/CVSSP/Publications-/papers/yusof-bmvc2000.pdf
 
 def compare_histograms(hist1, hist2):
   return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CHISQR)
 
-def split_video(path, show_cuts = False, use_csv = True, save_to_csv = True): # Returns an array of frame indices, each one is the first frame of a group
+def split_video(path, show_cuts = False, use_csv = True, save_to_csv = True, return_frame_count = False): # Returns an array of frame indices, each one is the first frame of a group
   if use_csv:
     group_start_indices = check_for_csv(path)
     if group_start_indices != None:
       return group_start_indices
 
-  group_start_indices = [0]
+  group_start_indices = [0] # Stores the indices of frames that occur at the start of a shot
   window_size = 9
   window_centre = window_size // 2
   frame_number = 0
@@ -49,7 +48,7 @@ def split_video(path, show_cuts = False, use_csv = True, save_to_csv = True): # 
     if dissimilarity > threshold and frame_number > next_decision:
       if show_cuts: # Display each pair of sufficiently different frames
         display_frame_pair(window[window_centre], window[window_centre+1])
-      print('Dissimilarity: ' + str(dissimilarity))
+      # print('Dissimilarity: ' + str(dissimilarity))
       group_start_indices.append(frame_number-window_centre)
       next_decision = frame_number + window_centre # After a shot is detected, no new decisions are made until half the window size has passed
 
@@ -73,7 +72,10 @@ def split_video(path, show_cuts = False, use_csv = True, save_to_csv = True): # 
     np.savetxt(csv_path, np.asarray(group_start_indices), fmt="%d", delimiter=",")
 
   vid.release()
-  return group_start_indices
+  if return_frame_count:
+    return frame_number
+  else:
+    return group_start_indices
 
 def check_for_csv(path):
   csv_path = os.path.splitext(path)[0] + '.csv'

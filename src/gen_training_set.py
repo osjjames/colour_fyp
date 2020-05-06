@@ -1,4 +1,4 @@
-from histogram_better import split_video
+from shot_cut import split_video
 
 import numpy as np
 import matplotlib.pyplot as plt
