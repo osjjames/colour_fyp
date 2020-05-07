@@ -11,7 +11,8 @@ import gen_training_set as gts
 import shot_cut as sc
 import video_utils as vu
 
-def colorise_video(video_path, n):
+def colourise_video(video_name, n):
+  video_path = '/videos/' + video_name
   save_path = os.path.splitext(video_path)[0] + '_n=' + str(n) + '.mp4'
   vid_out = vu.setup_writer(video_path, save_path) # Setup video writer to save output to file
 
@@ -87,7 +88,7 @@ def main():
   # cnn.create()
   # gts.training_set_from_video('/src/test_vids/vid.mp4', 5, use_csv = True)
   # sc.split_video('/src/data/train_vids/grand_budapest_hotel.mp4', show_cuts = True, save_to_csv = True)
-  colorise_video('/videos/vid.mp4', 9)
+  colourise_video('/videos/vid.mp4', 9)
 
   # gts.save_images(train_X, '/src/data/train/', 'gbh-')
   # gts.save_images(train_y, '/src/data/train/', 'gbh-')
