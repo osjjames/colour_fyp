@@ -1,4 +1,4 @@
-# Code from https://github.com/foamliu/Colorful-Image-Colorization/blob/master/data_generator.py
+# Code modified from https://github.com/foamliu/Colorful-Image-Colorization/blob/master/data_generator.py
 
 import os
 import random
