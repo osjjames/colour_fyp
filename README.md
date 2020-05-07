@@ -24,4 +24,4 @@ A ZIP file containing some examples of output videos from this application can b
 
 5. Enter the password `test`. Click on the file `getStarted.ipynb`. You are now in a Jupyter notebook running the application.
 
-6. To test the application, place a video file in the `colour_fyp/videos` directory. Enter the name of the video (e.g. "test_video.mp4") in the `video_name` variable. Finally, click "Run" at the top of the page. When completed, the output video will appear in the `colour_fyp/videos` directory. 
+6. To test the application, place a video file in the `colour_fyp/videos` directory. Set the `video_name` variable in the notebook to the name of the video file (e.g. "test_video.mp4"). Finally, click "Run" at the top of the page. When completed, the output video will appear in the `colour_fyp/videos` directory. 
