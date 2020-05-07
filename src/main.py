@@ -21,7 +21,7 @@ def colorise_video(video_path, n):
 
   vid_in = cv2.VideoCapture(video_path)  # Import video
 
-  for shot_number in trange(len(shot_indices), desc="Group Number"):
+  for shot_number in trange(len(shot_indices), desc="Shots"):
     curr_shot_Lab = gts.read_group_frames_lab(shot_indices, shot_number, vid_in) # Read all frames of current shot in CIELAB format
 
     sample_frame_indices = []
@@ -29,7 +29,7 @@ def colorise_video(video_path, n):
     for i in range(radius,len(curr_shot_Lab),n): # choose every nth frame to be a sample frame
       sample_frame_indices.append(i)
 
-    for j in tqdm(sample_frame_indices, desc="Color Frame Batch"):
+    for j in tqdm(sample_frame_indices, desc="Frame Bundles"):
       sample_frame = zhang.colorize(curr_shot_Lab[j], lab_only = True) # Colourise every nth frame using Zhang et al.'s CNN
 
       colour_a = sample_frame[:,:,1] # Extract a + b channels
@@ -125,13 +125,13 @@ def main():
   # cnn.create()
   # gts.training_set_from_video('/src/test_vids/vid.mp4', 5, use_csv = True)
   # sc.split_video('/src/data/train_vids/grand_budapest_hotel.mp4', show_cuts = True, save_to_csv = True)
-  colorise_video('/src/data/train_vids/grand_budapest_hotel.mp4', 9)
+  colorise_video('/videos/vid.mp4', 9)
 
   # gts.save_images(train_X, '/src/data/train/', 'gbh-')
   # gts.save_images(train_y, '/src/data/train/', 'gbh-')
 
   elapsed = time.time() - t
-  print(elapsed)
+  print('Time elapsed (s): ' + str(elapsed))
 
 if __name__ == '__main__':
   main()

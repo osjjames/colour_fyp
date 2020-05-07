@@ -7,12 +7,8 @@ WORKDIR /src
 COPY ./requirements.txt /src/requirements.txt
 RUN pip install -r requirements.txt
 
-COPY ./src/liblbfgs /src/liblbfgs
-COPY ./src/pylbfgs /src/pylbfgs
-COPY ./cs_setup.sh /src/cs_setup.sh
-RUN sh ./cs_setup.sh
-# ADD . /src
-# EXPOSE 8888
+RUN mkdir ~/resources
+RUN wget http://eecs.berkeley.edu/~rich.zhang/projects/2016_colorization/files/demo_v2/colorization_release_v2.caffemodel -O ~/resources/colorization_release_v2.caffemodel
+# RUN mv ./colorization_release_v2.caffemodel /src/zhang/models
+
 CMD ["sh", "./setup.sh"]
-# CMD ["jupyter", "notebook", "--ip", "0.0.0.0", "--allow-root", "--no-browser", "--NotebookApp.token='test'"]
-# CMD [ "python", "./main.py"]

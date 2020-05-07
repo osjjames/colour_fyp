@@ -1,11 +1,11 @@
 *.DS_Store
-src/data/train_X/*
-src/data/train_y/*
-test_frames/
-FLIC/
 *.mp4
 *.pyc
 *.ipynb
-*.hdf5
 logs/
 src/data/*_names.txt
+src/data/train_vids
+src/test_vids
+src/zhang_old
+videos/*
+resources/*

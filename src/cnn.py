@@ -100,7 +100,7 @@ def predict_lab(model, orig_image): # Passes an image through the CNN and proces
 
   h, w = img_rows // 4, img_cols // 4
 
-  q_ab = np.load('/src/data/pts_in_hull.npy')
+  q_ab = np.load('/src/zhang/resources/pts_in_hull.npy')
   nb_q = q_ab.shape[0]
 
   image_batch = np.empty((1, img_rows, img_cols, 3), dtype=np.float32)
