@@ -12,7 +12,7 @@ import shot_cut as sc
 import video_utils as vu
 
 def colorise_video(video_path, n):
-  save_path = os.path.splitext(video_path)[0] + '-colourised-' + str(n) + '.mp4'
+  save_path = os.path.splitext(video_path)[0] + '_n=' + str(n) + '.mp4'
   vid_out = vu.setup_writer(video_path, save_path) # Setup video writer to save output to file
 
   model = cnn.load_model(cnn.checkpoint_models_path + "full_model_256.hdf5") # Load CTCNN model
@@ -52,44 +52,6 @@ def colorise_video(video_path, n):
 
   vid_in.release()
   vid_out.release() # Save final output video
-
-def colorise_video_one(video_path):
-  save_path = os.path.splitext(video_path)[0] + '-colourised-one.mp4'
-  vid_out = vu.setup_writer(video_path, save_path)
-
-  model = cnn.load_model(cnn.checkpoint_models_path + "full_model_256.hdf5") # Load CNN model
-  print('model loaded')
-
-  group_indices = sc.split_video(video_path) # Split input video by shots
-
-  vid_in = cv2.VideoCapture(video_path)  # Import video
-
-  for group_number in trange(len(group_indices), desc="Group Number"):
-    curr_group_Lab = gts.read_group_frames_lab(group_indices, group_number, vid_in)
-
-    # colour_frame = zhang.colorize(curr_group_Lab[j], lab_only = True) # Colourise every nth frame
-    colour_frame = curr_group_Lab[0]
-    vid_out.write(cv2.cvtColor(colour_frame, cv2.COLOR_Lab2BGR)) # Save frame to video
-    
-    prev_frame = colour_frame
-    for j in trange(1, len(curr_group_Lab), desc="Frame number within group"):
-      color_a = prev_frame[:,:,1] # Extract a + b channels
-      color_b = prev_frame[:,:,2]
-      target = curr_group_Lab[j]
-      target_l = target[:,:,0]
-
-      X_channels = [target_l, color_a, color_b]
-      X_image = np.stack(X_channels, axis=-1) # Combine target frame L channel with colourised frame a+b channels
-
-      new_frame = cnn.predict_lab(model, X_image) # Put through CNN to smooth colour differences
-      # sc.display_frame_pair(cv2.cvtColor(X_image, cv2.COLOR_Lab2BGR), cv2.cvtColor(new_frame, cv2.COLOR_Lab2BGR))
-      new_frame_rgb = cv2.cvtColor(new_frame, cv2.COLOR_Lab2BGR)
-
-      vid_out.write(new_frame_rgb) # Save frame to video
-      prev_frame = new_frame
-
-  vid_in.release()
-  vid_out.release()
 
 def colourise_and_record(video_path, start_n, end_n):
   path_prefix = os.path.splitext(video_path)[0]

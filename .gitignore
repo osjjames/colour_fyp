@@ -1,11 +1,13 @@
 *.DS_Store
 *.mp4
 *.pyc
-*.ipynb
+*.csv
 logs/
 src/data/*_names.txt
 src/data/train_vids
-src/test_vids
+src/test_vids/
 src/zhang_old
 videos/*
+!videos/README.md
 resources/*
+!resources/README.md
