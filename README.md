@@ -1,10 +1,14 @@
 # Automatic Video Colourisation Through Spatial Colour Adjustment
 
+[Dissertation (PDF)](https://drive.google.com/file/d/1c81SHiHS3Uu6YRfCwaiLZXwCQPWuCmXy/view?usp=sharing)
+
 ## Information
 
-This is an automatic video colourisation application created by Oliver James (oj247@bath.ac.uk) for the University of Bath Department of Computer Science final year project.
+This is an automatic video colourisation application created by Oliver James (oj247@bath.ac.uk)* for the University of Bath Department of Computer Science final year project.
 
-A ZIP file containing some examples of output videos from this application can be downloaded at https://drive.google.com/file/d/1ZcnuGgaDEmt1wGRL0OOzSOzfFHchgjA4/view?usp=sharing .
+A ZIP file containing some examples of output videos from this application can be downloaded [here](https://drive.google.com/file/d/1ZcnuGgaDEmt1wGRL0OOzSOzfFHchgjA4/view?usp=sharing).
+
+\* _email no longer active - please contact osj.james@gmail.com instead_
 
 ## Get Started
 
